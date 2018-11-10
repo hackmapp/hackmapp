@@ -13,8 +13,45 @@ headers = {'User-Agent':user_agent,}
 request = urllib.request.Request(my_url,None,headers) 
 UClient = urllib.request.urlopen(request)
 
-#reads page, spits out soup
+filename = "hackathons.csv"
+f = open(filename,"w")
+header = "Hackathon_Name, Year, Month, Day, Locality, Region, URL\n"
+f.write(header)
+
+# reads page, spits out soup
 page_html = UClient.read() 
 UClient.close()
 page_soup = soup(page_html, "html.parser")
-print(page_soup.h1)
+
+# grabs each event
+events = page_soup.findAll("div",{"class":"event-wrapper"})
+
+for event in events:
+    # finds and prints every name
+    name_container = event.findAll("h3",{"itemprop":"name"})
+    name = name_container[0].text.strip()
+    #print(name)
+
+    # finds and prints the start date
+    startDate = event.div.meta["content"]
+    year,month,day = startDate.split("-")
+    #print(year + " " + month + " " + day)
+
+    # finds and prints the locality
+    localityContainer = event.findAll("span",{"itemprop":"addressLocality"})
+    locality = localityContainer[0].text.strip()
+    #print(locality)
+
+    # finds and prints the region
+    regionContainer = event.findAll("span",{"itemprop":"addressRegion"})
+    region = regionContainer[0].text.strip()
+    #print(region)
+
+    #finds and prints the url
+    url = event.a["href"]
+    #print(url)
+
+    f.write(name + "," + year + "," + month + "," + day + "," + locality + "," + region + "," + url + "\n")
+
+f.close()
+
