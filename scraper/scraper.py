@@ -15,7 +15,7 @@ UClient = urllib.request.urlopen(request)
 
 filename = "hackathons.csv"
 f = open(filename,"w")
-header = "Hackathon_Name, Year, Month, Day, Locality, Region, URL\n"
+header = "Hackathon_Name, Start_Year, Start_Month, Start_Day, End_Year, End_Month, End_Day, Locality, Region, URL\n"
 f.write(header)
 
 # reads page, spits out soup
@@ -33,9 +33,10 @@ for event in events:
     #print(name)
 
     # finds and prints the start date
-    startDate = event.div.meta["content"]
-    year,month,day = startDate.split("-")
-    #print(year + " " + month + " " + day)
+    startDate_container = event.findAll("meta",{"itemprop":"startDate"})
+    startDate = startDate_container[0].attrs['content']
+    startYear,startMonth,startDay = startDate.split("-")
+    #print(startYear + " " + startMonth + " " + startDay)
 
     # finds and prints the locality
     localityContainer = event.findAll("span",{"itemprop":"addressLocality"})
@@ -51,7 +52,15 @@ for event in events:
     url = event.a["href"]
     #print(url)
 
-    f.write(name + "," + year + "," + month + "," + day + "," + locality + "," + region + "," + url + "\n")
+    endDate_container = event.findAll("meta",{"itemprop":"endDate"})
+    endDate = endDate_container[0].attrs['content']
+    endYear,endMonth,endDay = endDate.split("-")
+    #print(endYear + " " + endMonth + " " + endDay)
 
+    f.write(name + "," + startYear + "," + startMonth + "," + startDay + "," + endYear + "," + endMonth + "," + endDay + "," + locality + "," + region + "," + url + "\n")
+
+
+
+        
 f.close()
 
