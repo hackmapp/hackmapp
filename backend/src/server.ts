@@ -1,6 +1,6 @@
-import http = require('http');
 import express from 'express';
 import axios from 'axios';
+import cors from 'cors';
 
 import fs = require('fs');
 import childProcess = require('child_process');
@@ -13,7 +13,23 @@ const geocodeUrl = (address: string) =>
   `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${apiKey}`;
 
 const app = express();
-const server = http.createServer(app);
+
+const corsOptionsDelegate = (req: any, callback: any) => {
+  let corsOptions;
+
+  const whitelist = [
+    'https://hackmapp.com',
+    'https://hackm.app',
+  ];
+  if (whitelist.indexOf(req.header('Origin')) !== -1) {
+    corsOptions = { origin: true }; // reflect (enable) the requested origin in the CORS response
+  } else {
+    corsOptions = { origin: false }; // disable CORS for this request
+  }
+  callback(null, corsOptions); // callback expects two parameters: error and options
+};
+
+app.use(cors(corsOptionsDelegate));
 
 let hackathons: Hackathon[] = [];
 
@@ -22,7 +38,7 @@ app.get('/list', (req, res) => {
 });
 
 const port = 6000;
-server.listen(port, () => console.log(`Listening on port ${port}.`));
+app.listen(port, () => console.log(`Listening on port ${port}.`));
 
 const accChars = 'ŠŽšžŸÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðñòóôõöùúûüýÿ'.split('');
 const regChars = 'SZszYAAAAAACEEEEIIIIDNOOOOOUUUUYaaaaaaceeeeiiiidnooooouuuuyy'.split('');
@@ -93,7 +109,6 @@ function updateDatabase() {
 
 function exitHandler() {
   console.log('Initiating shut down sequence...');
-  server.close(() => console.log('Server shut down.'));
   clearInterval(interval);
 }
 
