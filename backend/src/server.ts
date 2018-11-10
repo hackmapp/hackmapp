@@ -84,7 +84,7 @@ const parser = parse({ delimiter: ',', columns: true }, (err: any | Error, data:
 // Calls the scraper and updates the database with the data from the scraper
 function updateDatabase() {
   const scraperDir = `${__dirname}/../../scraper`;
-  const scraper = childProcess.spawn('python', [ `${scraperDir}/scraper.py` ]);
+  const scraper = childProcess.spawn('python3', [ `${scraperDir}/scraper.py` ]);
 
   scraper.on('exit', () => {
     fs.createReadStream(`./hackathons.csv`).pipe(parser);
