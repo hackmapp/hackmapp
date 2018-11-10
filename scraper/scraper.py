@@ -15,7 +15,7 @@ UClient = urllib.request.urlopen(request)
 
 filename = "hackathons.csv"
 f = open(filename,"w")
-header = "Hackathon_Name, Start_Year, Start_Month, Start_Day, End_Year, End_Month, End_Day, Locality, Region, URL\n"
+header = "Hackathon_Name, High_School, Start_Year, Start_Month, Start_Day, End_Year, End_Month, End_Day, Locality, Region, URL\n"
 f.write(header)
 
 # reads page, spits out soup
@@ -57,10 +57,12 @@ for event in events:
     endYear,endMonth,endDay = endDate.split("-")
     #print(endYear + " " + endMonth + " " + endDay)
 
-    f.write(name + "," + startYear + "," + startMonth + "," + startDay + "," + endYear + "," + endMonth + "," + endDay + "," + locality + "," + region + "," + url + "\n")
+    if event.div.div.div != None:
+        highSchool = 1
+    else:
+        highSchool = 0
 
-
-
-        
+    f.write(name + "," + str(highSchool) + "," + startYear + "," + startMonth + "," + startDay + "," + endYear + "," + endMonth + "," + endDay + "," + locality + "," + region + "," + url + "\n")
+     
 f.close()
 
