@@ -6,6 +6,7 @@
 </head>
 
 <body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script src="https://d3js.org/topojson.v1.min.js"></script>
 <script>
@@ -29,17 +30,9 @@ var zoom = d3.behavior.zoom()
 
 // Set projection path for united states graph
 var path = d3.geo.path()
-    .projection(projection);
+    .projection(projection).pointRadius(2);
 
-// Query backend to get hackathon datapoints
-jQuery.get("domain:6000/list")
-var geoPoint = {
-    "type": "Point",
-    "coordinates": [
-        -105.01621,
-        39.57422
-    ]
-}
+let hackathons = [];
 
 // Creation of svg obejct with all the stuff inside
 var svg = d3.select("body").append("svg")
@@ -64,7 +57,7 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
 
   g.selectAll("path")
       .data(topojson.feature(us, us.objects.states).features)
-    .enter().append("path")
+      .enter().append("path")
       .attr("d", path)
       .attr("class", "feature")
       .on("click", clicked);
@@ -73,11 +66,28 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
       .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
       .attr("class", "mesh")
       .attr("d", path);
-  // Create geopoint
-  g.append("path")
-      .attr("d", path(geoPoint))
-      .style("stroke", "#FF00FF")
-      .style("stroke-width", "1")
+  // Iterate through locations in location array and append to svg
+  console.log(hackathons);
+
+  // Query backend to get hackathon datapoints
+  $.get("https://api.hackm.app/list", (data) => {
+    // Iterate through hackathons in json and append to locations array
+    data.forEach((row) => {
+      var geoPoint = {
+        "type": "Point",
+        "coordinates": [
+          row.location.longitude,
+          row.location.latitude,
+        ]
+      }
+      g.append("path")
+        .attr("d", path(geoPoint))
+        .attr("fill", filler(row))
+        .on("click", pointClicked)
+        .style("stroke", "#FF0000")
+        .style("stroke-width", "0.1");
+    })
+  })
 });
 
 function clicked(d) {
@@ -96,6 +106,42 @@ function clicked(d) {
   svg.transition()
       .duration(750)
       .call(zoom.translate(translate).scale(scale).event);
+}
+
+function pointClicked(d) {
+  if (active.node() === this) return reset();
+  active.classed("active", false);
+  active.d3.select(this).classed("active", true);
+
+  var bounds = path.bounds(d),
+      dx = bounds[1][0] - bounds[0][0],
+      dy = bounds[1][1] - bounds[0][1],
+      x = (bounds[0][0] + bounds[1][0]) / 2,
+      y = (bounds[0][1] + bounds[1][1]) / 2,
+      scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / width, dy / height))),
+      translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+  svg.transition()
+      .duration(750)
+      .call(zoom.translate(translate).scale(scale).event);
+}
+
+const msPerDay = 24 * 60 * 60 * 1000;
+
+function filler(hackathon) {
+  var today = new Date();
+  const { startDate } = hackathon;
+  console.log(startDate);
+  var hackDate = new Date(startDate.year, startDate.month - 1, startDate.day);
+  var distance = hackDate.getTime() - today.getTime();
+
+  console.log((distance / (90 * msPerDay)));
+  let gb = 255 * (distance / (90 * msPerDay));
+  if (gb < 0) gb = 255;
+  if (gb < 30) gb = 30;
+  if (gb > 255) gb = 255;
+  console.log(`rgb(255, ${gb}, ${gb})`);
+  return `rgb(255, ${gb}, ${gb})`;
 }
 
 function reset() {
