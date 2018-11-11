@@ -10,6 +10,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script src="https://d3js.org/topojson.v1.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
 <script>
 
 $("body").append(`<div class="preview">Loading website...</div>`);
@@ -19,14 +20,19 @@ $("body").append(`<div class="description"></div>`);
 $(".preview").hide();
 
 // Set variables for dimensions and if something is selected
-var width,
+let width,
     height,
     active = d3.select(null),
     portrait,
     modifier = 0,
-    fullMap = true;
+    modifierLast = 0,
+    fullMap = true,
+    usMap;
 
-function resize() {
+function resize(animate = false, translate = true) {
+  let dMod = modifier - modifierLast;
+  modifierLast = modifier;
+
   if (window.innerWidth < window.innerHeight) {
     width = window.innerWidth;
     height = window.innerHeight / 2 - 1;
@@ -45,17 +51,33 @@ function resize() {
     modifier = Math.trunc(portrait ? height : width);
   }
 
-  console.log(modifier);
-  $(".preview")
-    .attr("width", width - (portrait ? 0 : modifier))
-    .attr("height", height - (!portrait ? 0 : modifier))
-    .css("width", `${width - (portrait ? 0 : modifier)}px`)
-    .css("height", `${height - (!portrait ? 0 : modifier)}px`)
-    .css("line-height", `${height - (!portrait ? 0 : modifier)}px`);
-  $("#map, #mapView")
-    .attr("width", width + (portrait ? 0 : modifier))
-    .attr("height", height + (!portrait ? 0 : modifier));
+  if (animate === true) {
+    $(".preview")
+      .animate({ "width": `${width - (portrait ? 0 : modifier)}px` })
+      .animate({ "height": `${height - (!portrait ? 0 : modifier)}px` })
+      .css("line-height", `${height - (!portrait ? 0 : modifier)}px`);
+    $("#map, #mapView")
+      .animate({ "width": `${width + (portrait ? 0 : modifier)}px` })
+      .animate({ "height": `${height + (!portrait ? 0 : modifier)}px` });
+  } else {
+    $(".preview")
+      .css("width", `${width - (portrait ? 0 : modifier)}px`)
+      .css("height", `${height - (!portrait ? 0 : modifier)}px`)
+      .css("line-height", `${height - (!portrait ? 0 : modifier)}px`);
+    $("#map, #mapView")
+      .css("width", `${width + (portrait ? 0 : modifier)}px`)
+      .css("height", `${height + (!portrait ? 0 : modifier)}px`);
+  }
   $(".description").css("bottom", `${(!portrait ? 0 : height- modifier) + 20}px`);
+
+
+  if (g && translate) {
+    let translate = d3.transform(d3.select(g.node()).attr("transform")).translate
+    translate[0] = translate[0] + dMod / 2;
+    svg.transition()
+        .duration(750)
+        .call(zoom.translate(translate).event);
+  }
 }
 
 resize();
@@ -113,6 +135,7 @@ svg
 d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json", function(error, us) {
   if (error) throw error;
 
+  usMap = us;
   g.selectAll("path")
       .data(topojson.feature(us, us.objects.states).features)
       .enter().append("path")
@@ -169,14 +192,24 @@ function clicked(d) {
   active.classed("active", false);
   active = d3.select(this).classed("active", true);
 
+  let mapWidth = width;
+  let mapHeight = height;
+  if (portrait) {
+    mapHeight += modifier;
+  } else {
+    mapWidth += modifier;
+  }
+
+  console.log(d);
   var bounds = path.bounds(d),
       dx = bounds[1][0] - bounds[0][0],
       dy = bounds[1][1] - bounds[0][1],
       x = (bounds[0][0] + bounds[1][0]) / 2,
       y = (bounds[0][1] + bounds[1][1]) / 2,
-      scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / width, dy / height))),
-      translate = [width / 2 - scale * x, height / 2 - scale * y];
+      scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / mapWidth, dy / mapHeight))),
+      translate = [mapWidth / 2 - scale * x, mapHeight / 2 - scale * y];
 
+  console.log(bounds);
   svg.transition()
       .duration(750)
       .call(zoom.translate(translate).scale(scale).event);
@@ -263,9 +296,30 @@ function reset() {
   active.classed("active", false);
   active = d3.select(null);
 
+  // svg.transition()
+  //     .duration(750)
+  //     .call(zoom.translate([0, 0]).scale(1).event);
+
+  let mapWidth = width;
+  let mapHeight = height;
+  if (portrait) {
+    mapHeight += modifier;
+  } else {
+    mapWidth += modifier;
+  }
+
+  console.log(usMap);
+  var bounds = path.bounds(topojson.mesh(usMap, usMap.objects.states, function(a, b) { return a !== b; })),
+      dx = bounds[1][0] - bounds[0][0],
+      dy = bounds[1][1] - bounds[0][1],
+      x = (bounds[0][0] + bounds[1][0]) / 2,
+      y = (bounds[0][1] + bounds[1][1]) / 2,
+      scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / mapWidth, dy / mapHeight))),
+      translate = [mapWidth / 2 - scale * x, mapHeight / 2 - scale * y];
+
   svg.transition()
       .duration(750)
-      .call(zoom.translate([0, 0]).scale(1).event);
+      .call(zoom.translate(translate).scale(scale).event);
 }
 
 function zoomed() {
@@ -283,17 +337,11 @@ function startShrink() {
   $(".preview").show();
   modifier = Math.trunc(portrait ? height : width);
   modifier = Math.trunc(modifier / 4) * 4;
-  shrink();
+  modifier = 0;
+  resize(true);
 }
 
-function shrink() {
-  resize();
-  modifier = Math.trunc(modifier + (modifier > 0 ? -4 : 4));
-  if (modifier != 0) {
-    setTimeout(shrink, 0);
-  }
-}
-
-resize(); // Resize again to update size
+resize(false, false); // Resize again to update size
+setTimeout(reset, 100);
 </script>
 </body>
