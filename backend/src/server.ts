@@ -51,7 +51,7 @@ function cleanAccents(input: string) {
 }
 
 // Parse the data csv and store it
-const parser = parse({ delimiter: ',', columns: true }, (err: any | Error, data: any) => {
+const parser = () => parse({ delimiter: ',', columns: true }, (err: any | Error, data: any) => {
   // TODO: store data into hackathons
   hackathons = [];
   data.forEach((row: any) => {
@@ -96,15 +96,20 @@ const parser = parse({ delimiter: ',', columns: true }, (err: any | Error, data:
         hackathons.push(hackathon);
       }).catch((err) => console.log(err));
   });
+  scraper.kill();
+  readStream.close();
 });
 
 // Calls the scraper and updates the database with the data from the scraper
+let readStream: fs.ReadStream;
+let scraper: childProcess.ChildProcess;
 function updateDatabase() {
   const scraperDir = `${__dirname}/../../scraper`;
-  const scraper = childProcess.spawn('python3', [ `${scraperDir}/scraper.py` ]);
+  scraper = childProcess.spawn('python3', [ `${scraperDir}/scraper.py` ]);
 
   scraper.on('exit', () => {
-    fs.createReadStream(`./hackathons.csv`).pipe(parser);
+    readStream = fs.createReadStream(`./hackathons.csv`);
+    readStream.pipe(parser());
   });
 }
 
