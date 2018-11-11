@@ -16,7 +16,7 @@ UClient = urllib.request.urlopen(request)
 
 filename = "hackathons.csv"
 f = open(filename,"w")
-header = "Hackathon_Name, High_School, Start_Year, Start_Month, Start_Day, End_Year, End_Month, End_Day, Locality, Region, URL\n"
+header = "Hackathon_Name,High_School,Start_Year,Start_Month,Start_Day,End_Year,End_Month,End_Day,Locality,Region,URL\n"
 f.write(header)
 
 filename2 = "hackathonstxt.txt"

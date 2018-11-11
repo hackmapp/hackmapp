@@ -1,17 +1,19 @@
-interface Date {
+export interface Date {
   year: number;
   month: number;
   day: number;
 }
 
-interface Location {
+export interface Location {
   longitude: number;
   latitude: number;
 }
 
 export default interface Hackathon {
   name: string;
-  date: Date;
+  isHighSchool: boolean;
+  startDate: Date;
+  endDate: Date;
   location: Location;
   url: string;
 }
