@@ -12,31 +12,64 @@
 <script src="https://d3js.org/topojson.v1.min.js"></script>
 <script>
 
+$("body").append(`<div class="preview">Loading website...</div>`);
+$("body").append(`<iframe class="preview" src=""></iframe>`);
+$("body").append(`<div class="description"></div>`);
+
+$(".preview").hide();
+
 // Set variables for dimensions and if something is selected
-var width = window.innerWidth / 2 - 1,
-    height = window.innerHeight,
+var width,
+    height,
     active = d3.select(null),
+    portrait,
+    modifier = 0,
+    fullMap = true;
+
+function resize() {
+  if (window.innerWidth < window.innerHeight) {
+    width = window.innerWidth;
+    height = window.innerHeight / 2 - 1;
+    portrait = true;
+
+    $(".preview, .description").addClass("portrait");
+  } else {
+    width = window.innerWidth / 2 - 1;
+    height = window.innerHeight;
     portrait = false;
 
-if (window.innerWidth < window.innerHeight) {
-  width = window.innerWidth;
-  height = window.innerHeight / 2 - 1;
-  portrait = true;
+    $(".preview, .description").removeClass("portrait");
+  }
+
+  if (fullMap) {
+    modifier = Math.trunc(portrait ? height : width);
+  }
+
+  console.log(modifier);
+  $(".preview")
+    .attr("width", width - (portrait ? 0 : modifier))
+    .attr("height", height - (!portrait ? 0 : modifier))
+    .css("width", `${width - (portrait ? 0 : modifier)}px`)
+    .css("height", `${height - (!portrait ? 0 : modifier)}px`)
+    .css("line-height", `${height - (!portrait ? 0 : modifier)}px`);
+  $("#map, #mapView")
+    .attr("width", width + (portrait ? 0 : modifier))
+    .attr("height", height + (!portrait ? 0 : modifier));
+  $(".description.portrait").css("bottom", `${height - (!portrait ? 0 : modifier) + 20}px`);
 }
+
+resize();
+window.onresize = resize;
 
 var logo = document.createElement("IMG");
 logo.setAttribute("src", "hackmapp-logo.png");
 logo.setAttribute("id", "logo");
 document.body.append(logo);
 
-$("body").append(`<iframe class="preview" src="" width=${width} height=${height}></iframe>`);
-$("body").append(`<div class="description"></div>`);
-if (portrait) $(".preview, .description").addClass("portrait");
-
 // Setup for Albers projection, placed at center
 var projection = d3.geo.albersUsa()
     .scale(1000)
-    .translate([width / 2, height / 2]);
+    .translate([window.innerWidth / 2, window.innerHeight / 2]);
 
 // Set behavior for zooming
 var zoom = d3.behavior.zoom()
@@ -53,11 +86,13 @@ let hackathons = [];
 
 // Creation of svg obejct with all the stuff inside
 var svg = d3.select("body").append("svg")
+    .attr("id", "map")
     .attr("width", width)
     .attr("height", height)
     .on("click", stopped, true);
 
 svg.append("rect")
+    .attr("id", "mapView")
     .attr("class", "background")
     .attr("width", width)
     .attr("height", height)
@@ -141,7 +176,14 @@ function clicked(d) {
 function pointClicked(i) {
   console.log(i);
   console.log(hackathons[i]);
-  $(".preview").attr("src", `https://d-shen.xyz/miniProxy?${hackathons[i].url}`);
+  let url = hackathons[i].url;
+  if (!url.startsWith('https')) url = `https://d-shen.xyz/miniProxy.php?${url}`;
+  $("iframe.preview").attr("src", url);
+
+  if (fullMap) {
+    fullMap = false;
+    startShrink();
+  }
 }
 
 function pointMouse(i) {
@@ -218,5 +260,21 @@ function stopped() {
   if (d3.event.defaultPrevented) d3.event.stopPropagation();
 }
 
+function startShrink() {
+  $(".preview").show();
+  modifier = Math.trunc(portrait ? height : width);
+  modifier = Math.trunc(modifier / 4) * 4;
+  shrink();
+}
+
+function shrink() {
+  resize();
+  modifier = Math.trunc(modifier + (modifier > 0 ? -4 : 4));
+  if (modifier != 0) {
+    setTimeout(shrink, 0);
+  }
+}
+
+resize(); // Resize again to update size
 </script>
 </body>
