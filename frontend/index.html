@@ -24,6 +24,11 @@ if (window.innerWidth < window.innerHeight) {
   portrait = true;
 }
 
+var logo = document.createElement("IMG");
+logo.setAttribute("src", "hackmapp-logo.png");
+logo.setAttribute("id", "logo");
+document.body.append(logo);
+
 $("body").append(`<iframe class="preview" src="" width=${width} height=${height}></iframe>`);
 $("body").append(`<div class="description"></div>`);
 if (portrait) $(".preview, .description").addClass("portrait");

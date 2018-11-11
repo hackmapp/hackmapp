@@ -64,3 +64,9 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+#logo {
+  width: 20%;
+  height: auto;
+  position: absolute;
+}
