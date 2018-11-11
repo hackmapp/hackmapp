@@ -104,11 +104,12 @@ var zoom = d3.behavior.zoom()
 var path = d3.geo.path()
     .projection(projection).pointRadius(2);
 
-var text = document.createTextNode("Open in new tab");
+var img = document.createElement('img');
+img.setAttribute("src", "external-link-symbol.svg");
 var a = document.createElement('a');
 a.setAttribute("id", "link");
 a.setAttribute("target", "_blank")
-a.appendChild(text);
+a.appendChild(img);
 
 var hackathons = [];
 
@@ -184,7 +185,7 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
     })
   })
 
-  document.body.append(a);
+  document.querySelector("div.preview").append(a);
 });
 
 function clicked(d) {
