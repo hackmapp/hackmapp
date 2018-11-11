@@ -55,7 +55,7 @@ function resize() {
   $("#map, #mapView")
     .attr("width", width + (portrait ? 0 : modifier))
     .attr("height", height + (!portrait ? 0 : modifier));
-  $(".description.portrait").css("bottom", `${height - (!portrait ? 0 : modifier) + 20}px`);
+  $(".description").css("bottom", `${(!portrait ? 0 : height- modifier) + 20}px`);
 }
 
 resize();
@@ -140,6 +140,7 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
       }
 
       const i = hackathons.length - 1;
+      const color = row.isHighSchool ? "#3333FF" : "#FF0000";
 
       console.log(i);
       g.append("path")
@@ -149,8 +150,8 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
         .attr("id", `h-${i}`)
         .on("click", () => { pointClicked(i); })
         .on("mouseover", () => { pointMouse(i); })
-        .style("stroke", "#FF0000")
-        .style("stroke-width", "0.1");
+        .style("stroke", color)
+        .style("stroke-width", "0.3");
     })
   })
 });
@@ -177,7 +178,8 @@ function pointClicked(i) {
   console.log(i);
   console.log(hackathons[i]);
   let url = hackathons[i].url;
-  if (!url.startsWith('https')) url = `https://d-shen.xyz/miniProxy.php?${url}`;
+  /*if (!url.startsWith('https')) */url = `https://d-shen.xyz/miniProxy.php?${url}`;
+  //if (url.startsWith('http://')) url = `https${url.substr(4)}`;
   $("iframe.preview").attr("src", url);
 
   if (fullMap) {
@@ -188,13 +190,13 @@ function pointClicked(i) {
 
 function pointMouse(i) {
   if (i !== null) {
-    const { name, location, startDate, endDate } = hackathons[i];
+    const { name, isHighSchool, location, startDate, endDate } = hackathons[i];
 
     $(".description > *").remove();
     $(".description")
       .stop()
       .fadeIn()
-      .append(`<div class="title">${name}</div>`)
+      .append(`<div class="title">${name}${isHighSchool ? " (HS)" : ""}</div>`)
       .append(`<div class="loc">${location.name}</div>`)
       .append(`<div class="date">${formatDate(startDate)} - ${formatDate(endDate)} `
         + `(${startDate.getFullYear()})</div>`);
@@ -224,18 +226,25 @@ function formatDate(date) {
 const msPerDay = 24 * 60 * 60 * 1000;
 
 function filler(hackathon) {
-  const { startDate } = hackathon;
-  var distance = startDate - new Date();
+  const { startDate, endDate } = hackathon;
+  endDate.setHours(23, 59, 59); // set end time to midnight
+  const now = new Date();
+  var distance = startDate - now;
 
   let red = 255;
-  console.log((distance / (90 * msPerDay)));
   let gb = 255 * (distance / (90 * msPerDay));
-  if (gb < 0) {
-    gb = 80;
-    red = 80;
+
+  if (startDate < now && endDate > now) {
+    red = 0;
+    gb = 120;
+  } else {
+    if (gb < 0) {
+      gb = 80;
+      red = 80;
+    }
+    else if (gb < 30) gb = 30;
+    else if (gb > 255) gb = 255;
   }
-  else if (gb < 30) gb = 30;
-  else if (gb > 255) gb = 255;
   console.log(`rgb(${red}, ${gb}, ${gb})`);
   return `rgb(${red}, ${gb}, ${gb})`;
 }
