@@ -136,7 +136,7 @@ function clicked(d) {
 function pointClicked(i) {
   console.log(i);
   console.log(hackathons[i]);
-  $(".preview").attr("src", hackathons[i].url);
+  $(".preview").attr("src", `https://d-shen.xyz/miniProxy?${hackathons[i].url}`);
 }
 
 function pointMouse(i) {
