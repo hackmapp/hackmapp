@@ -71,3 +71,15 @@ div.preview {
   top: 0;
   left: 0;
 }
+
+#link {
+  left: 42%;
+  z-index: 999;
+  position: absolute;
+  bottom: 10px;
+  display: none;
+  padding: 10px;
+  background: #ddd;
+  color: black;
+  text-decoration: none;
+}

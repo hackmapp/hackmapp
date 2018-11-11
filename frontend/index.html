@@ -82,7 +82,13 @@ var zoom = d3.behavior.zoom()
 var path = d3.geo.path()
     .projection(projection).pointRadius(2);
 
-let hackathons = [];
+var text = document.createTextNode("Open in new tab");
+var a = document.createElement('a');
+a.setAttribute("id", "link");
+a.setAttribute("target", "_blank")
+a.appendChild(text);
+
+var hackathons = [];
 
 // Creation of svg obejct with all the stuff inside
 var svg = d3.select("body").append("svg")
@@ -154,6 +160,8 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
         .style("stroke-width", "0.3");
     })
   })
+
+  document.body.append(a);
 });
 
 function clicked(d) {
@@ -186,6 +194,8 @@ function pointClicked(i) {
     fullMap = false;
     startShrink();
   }
+  a.href = hackathons[i].url
+  $(a).css("display", "inherit");
 }
 
 function pointMouse(i) {
