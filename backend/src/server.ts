@@ -73,6 +73,7 @@ const parser = parse({ delimiter: ',', columns: true }, (err: any | Error, data:
         const location: Location = {
           longitude: parseFloat(response.data.results[0].geometry.location.lng),
           latitude: parseFloat(response.data.results[0].geometry.location.lat),
+          name: address,
         };
 
         let hackathon: Hackathon = {

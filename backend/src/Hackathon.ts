@@ -7,6 +7,7 @@ export interface Date {
 export interface Location {
   longitude: number;
   latitude: number;
+  name: string;
 }
 
 export default interface Hackathon {
