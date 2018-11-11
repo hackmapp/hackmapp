@@ -12,9 +12,20 @@
 <script>
 
 // Set variables for dimensions and if something is selected
-var width = 960,
-    height = 500,
-    active = d3.select(null);
+var width = window.innerWidth / 2 - 1,
+    height = window.innerHeight,
+    active = d3.select(null),
+    portrait = false;
+
+if (window.innerWidth < window.innerHeight) {
+  width = window.innerWidth;
+  height = window.innerHeight / 2 - 1;
+  portrait = true;
+}
+
+$("body").append(`<iframe class="preview" src="" width=${width} height=${height}></iframe>`);
+$("body").append(`<div class="description"></div>`);
+if (portrait) $(".preview, .description").addClass("portrait");
 
 // Setup for Albers projection, placed at center
 var projection = d3.geo.albersUsa()
@@ -60,7 +71,8 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
       .enter().append("path")
       .attr("d", path)
       .attr("class", "feature")
-      .on("click", clicked);
+      .on("click", clicked)
+      .on("mouseover", () => { pointMouse(null); });
 
   g.append("path")
       .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
@@ -73,6 +85,7 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
   $.get("https://api.hackm.app/list", (data) => {
     // Iterate through hackathons in json and append to locations array
     data.forEach((row) => {
+      hackathons.push(row);
       var geoPoint = {
         "type": "Point",
         "coordinates": [
@@ -80,10 +93,17 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
           row.location.latitude,
         ]
       }
+
+      const i = hackathons.length - 1;
+
+      console.log(i);
       g.append("path")
         .attr("d", path(geoPoint))
         .attr("fill", filler(row))
-        .on("click", pointClicked)
+        .attr("class", "hackathon")
+        .attr("id", `h-${i}`)
+        .on("click", () => { pointClicked(i); })
+        .on("mouseover", () => { pointMouse(i); })
         .style("stroke", "#FF0000")
         .style("stroke-width", "0.1");
     })
@@ -108,40 +128,47 @@ function clicked(d) {
       .call(zoom.translate(translate).scale(scale).event);
 }
 
-function pointClicked(d) {
-  if (active.node() === this) return reset();
-  active.classed("active", false);
-  active.d3.select(this).classed("active", true);
+function pointClicked(i) {
+  console.log(i);
+  console.log(hackathons[i]);
+  $(".preview").attr("src", hackathons[i].url);
+}
 
-  var bounds = path.bounds(d),
-      dx = bounds[1][0] - bounds[0][0],
-      dy = bounds[1][1] - bounds[0][1],
-      x = (bounds[0][0] + bounds[1][0]) / 2,
-      y = (bounds[0][1] + bounds[1][1]) / 2,
-      scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / width, dy / height))),
-      translate = [width / 2 - scale * x, height / 2 - scale * y];
+function pointMouse(i) {
+  if (i !== null) {
+    $(".description > *").remove();
+    $(".description")
+      .stop()
+      .fadeIn()
+      .append(`<div><strong>${hackathons[i].name}</strong></div>`)
+      .append(`<div>${hackathons[i].location.name}</div>`);
+  } else {
+    $(".description").fadeOut("fast", () => {
+      $(".description > *").remove();
+    });
+  }
 
-  svg.transition()
-      .duration(750)
-      .call(zoom.translate(translate).scale(scale).event);
 }
 
 const msPerDay = 24 * 60 * 60 * 1000;
 
 function filler(hackathon) {
-  var today = new Date();
   const { startDate } = hackathon;
   console.log(startDate);
   var hackDate = new Date(startDate.year, startDate.month - 1, startDate.day);
-  var distance = hackDate.getTime() - today.getTime();
+  var distance = hackDate.getTime() - new Date();
 
+  let red = 255;
   console.log((distance / (90 * msPerDay)));
   let gb = 255 * (distance / (90 * msPerDay));
-  if (gb < 0) gb = 255;
-  if (gb < 30) gb = 30;
-  if (gb > 255) gb = 255;
-  console.log(`rgb(255, ${gb}, ${gb})`);
-  return `rgb(255, ${gb}, ${gb})`;
+  if (gb < 0) {
+    gb = 80;
+    red = 80;
+  }
+  else if (gb < 30) gb = 30;
+  else if (gb > 255) gb = 255;
+  console.log(`rgb(${red}, ${gb}, ${gb})`);
+  return `rgb(${red}, ${gb}, ${gb})`;
 }
 
 function reset() {

@@ -7,6 +7,7 @@ user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/
 
 # references
 my_url = "https://mlh.io/seasons/na-2019/events"
+my_url2 = "http://hackathonsnear.me/"
 headers = {'User-Agent':user_agent,} 
 
 # don't touch
@@ -18,8 +19,11 @@ f = open(filename,"w")
 header = "Hackathon_Name,High_School,Start_Year,Start_Month,Start_Day,End_Year,End_Month,End_Day,Locality,Region,URL\n"
 f.write(header)
 
+filename2 = "hackathonstxt.txt"
+f2 = open(filename2,"w")
+
 # reads page, spits out soup
-page_html = UClient.read() 
+page_html = UClient.read()
 UClient.close()
 page_soup = soup(page_html, "html.parser")
 
@@ -52,6 +56,7 @@ for event in events:
     url = event.a["href"]
     #print(url)
 
+    # finds and prints the start date
     endDate_container = event.findAll("meta",{"itemprop":"endDate"})
     endDate = endDate_container[0].attrs['content']
     endYear,endMonth,endDay = endDate.split("-")
@@ -62,7 +67,13 @@ for event in events:
     else:
         highSchool = 0
 
-    f.write(name + "," + str(highSchool) + "," + startYear + "," + startMonth + "," + startDay + "," + endYear + "," + endMonth + "," + endDay + "," + locality + "," + region + "," + url + "\n")
-     
+    f.write(name + "," + str(highSchool) + "," + startYear + "," + startMonth + "," + startDay + "," + endYear + "," + endMonth + "," + \
+            endDay + "," + locality + "," + region + "," + url + "\n")
+
+    
+
+    f2.write(startYear + " " + startMonth + " " + startDay + " " + region + "\n")
+    
 f.close()
+f2.close()
 
