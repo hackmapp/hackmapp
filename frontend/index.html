@@ -6,7 +6,7 @@
 </head>
 
 <body>
-<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script src="https://d3js.org/topojson.v1.min.js"></script>
 <script>
@@ -32,32 +32,7 @@ var zoom = d3.behavior.zoom()
 var path = d3.geo.path()
     .projection(projection).pointRadius(2);
 
-let locations = [];
-
-// Query backend to get hackathon datapoints
-$.get("https://api.hackm.app/list", (data) => {
-  // Iterate through hackathons in json and append to locations array
-  data.forEach((row) => {
-    var geoPoint = {
-      "type": "Point",
-      "coordinates": [
-        row[location][latitude],
-        row[location][longitude]
-      ]
-    }
-    locations.push(geoPoint);
-  })
-})
-
-var geoPoint = {
-    "type": "Point",
-    "coordinates": [
-        -105.01621,
-        39.57422
-    ]
-}
-
-locations.push(geoPoint);
+let hackathons = [];
 
 // Creation of svg obejct with all the stuff inside
 var svg = d3.select("body").append("svg")
@@ -92,11 +67,26 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
       .attr("class", "mesh")
       .attr("d", path);
   // Iterate through locations in location array and append to svg
-  locations.forEach((location) => {
-    g.append("path")
-      .attr("d", path(location))
-      .attr("fill", filler(location))
-      .on("click", pointClicked);
+  console.log(hackathons);
+
+  // Query backend to get hackathon datapoints
+  $.get("https://api.hackm.app/list", (data) => {
+    // Iterate through hackathons in json and append to locations array
+    data.forEach((row) => {
+      var geoPoint = {
+        "type": "Point",
+        "coordinates": [
+          row.location.longitude,
+          row.location.latitude,
+        ]
+      }
+      g.append("path")
+        .attr("d", path(geoPoint))
+        .attr("fill", filler(row))
+        .on("click", pointClicked)
+        .style("stroke", "#FF0000")
+        .style("stroke-width", "0.1");
+    })
   })
 });
 
@@ -136,17 +126,22 @@ function pointClicked(d) {
       .call(zoom.translate(translate).scale(scale).event);
 }
 
-function filler(location) {
+const msPerDay = 24 * 60 * 60 * 1000;
+
+function filler(hackathon) {
   var today = new Date();
-  var hackDate = new Date(location[date][year], location[date][month] - 1, location[date][day]);
-  var msPerDay = 24 * 60 * 60 * 1000;
+  const { startDate } = hackathon;
+  console.log(startDate);
+  var hackDate = new Date(startDate.year, startDate.month - 1, startDate.day);
   var distance = hackDate.getTime() - today.getTime();
-  if (distance > 90 * msPerDay) {
-    return "red"
-  }
-  if (distance > 60 * msPerDay) {
-    return "black"
-  }
+
+  console.log((distance / (90 * msPerDay)));
+  let gb = 255 * (distance / (90 * msPerDay));
+  if (gb < 0) gb = 255;
+  if (gb < 30) gb = 30;
+  if (gb > 255) gb = 255;
+  console.log(`rgb(255, ${gb}, ${gb})`);
+  return `rgb(255, ${gb}, ${gb})`;
 }
 
 function reset() {
