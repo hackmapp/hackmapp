@@ -32,8 +32,17 @@ const corsOptionsDelegate = (req: any, callback: any) => {
 app.use(cors(corsOptionsDelegate));
 
 let hackathons: Hackathon[] = [];
+let sorted: boolean = false;
 
 app.get('/list', (req, res) => {
+  if (!sorted) {
+    hackathons.sort((a: Hackathon, b: Hackathon) => {
+      const aDate = new Date(a.startDate.year, a.startDate.month - 1, a.startDate.day).getTime();
+      const bDate = new Date(b.startDate.year, b.startDate.month - 1, b.startDate.day).getTime();
+      return (aDate - bDate);
+    });
+    sorted = true;
+  }
   res.json(hackathons);
 });
 
@@ -54,6 +63,7 @@ function cleanAccents(input: string) {
 const parser = () => parse({ delimiter: ',', columns: true }, (err: any | Error, data: any) => {
   // TODO: store data into hackathons
   hackathons = [];
+  sorted = false;
   data.forEach((row: any) => {
     const address = `${row.Locality}, ${row.Region}`;
     axios.get(geocodeUrl(cleanAccents(address)))
