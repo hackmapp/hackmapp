@@ -391,7 +391,10 @@ function startShrink() {
 function unShrink() {
   modifier = Math.trunc(portrait ? height : width);
   resize(true);
-  setTimeout(() => $(".preview").hide(), 750);
+  setTimeout(() => {
+    $(".preview").hide();
+    $("iframe.preview").attr("src", "");
+  }, 750);
 }
 
 resize(false, false); // Resize again to update size
