@@ -7,7 +7,6 @@ user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/
 
 # references
 my_url = "https://mlh.io/seasons/na-2019/events"
-my_url2 = "http://hackathonsnear.me/"
 headers = {'User-Agent':user_agent,} 
 
 # don't touch
@@ -18,9 +17,6 @@ filename = "hackathons.csv"
 f = open(filename,"w")
 header = "Hackathon_Name,High_School,Start_Year,Start_Month,Start_Day,End_Year,End_Month,End_Day,Locality,Region,URL\n"
 f.write(header)
-
-filename2 = "hackathonstxt.txt"
-f2 = open(filename2,"w")
 
 # reads page, spits out soup
 page_html = UClient.read()
@@ -70,10 +66,6 @@ for event in events:
     f.write(name + "," + str(highSchool) + "," + startYear + "," + startMonth + "," + startDay + "," + endYear + "," + endMonth + "," + \
             endDay + "," + locality + "," + region + "," + url + "\n")
 
-    
+print("Scrape done successfully")  
 
-    f2.write(startYear + " " + startMonth + " " + startDay + " " + region + "\n")
-    
 f.close()
-f2.close()
-
