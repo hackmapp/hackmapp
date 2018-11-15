@@ -194,6 +194,7 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
     unShrink();
     fullMap = true;
   });
+  setTimeout(reset, 250);
 });
 
 function clicked(d) {
@@ -394,6 +395,5 @@ function unShrink() {
 }
 
 resize(false, false); // Resize again to update size
-setTimeout(reset, 500);
 </script>
 </body>
