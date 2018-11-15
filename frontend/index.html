@@ -4,6 +4,7 @@
 <head>
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css?family=Palanquin+Dark:600" rel="stylesheet">
+  <title>hackm.app</title>
 </head>
 
 <body>
@@ -82,6 +83,8 @@ function resize(animate = false, translate = true) {
 
 resize();
 window.onresize = resize;
+scale = 1;
+$("body").on("mousemove", checkHovers);
 
 var logo = document.createElement("IMG");
 logo.setAttribute("src", "hackmapp-logo.png");
@@ -97,12 +100,12 @@ var projection = d3.geo.albersUsa()
 var zoom = d3.behavior.zoom()
     .translate([0, 0])
     .scale(1)
-    .scaleExtent([1, 8])
+    .scaleExtent([1, 64])
     .on("zoom", zoomed);
 
 // Set projection path for united states graph
 var path = d3.geo.path()
-    .projection(projection).pointRadius(2);
+  .projection(projection).pointRadius(2);
 
 var img = document.createElement('img');
 img.setAttribute("src", "external-link-symbol.svg");
@@ -118,7 +121,8 @@ var svg = d3.select("body").append("svg")
     .attr("id", "map")
     .attr("width", width)
     .attr("height", height)
-    .on("click", stopped, true);
+    .on("click", stopped, true)
+    .on("mouseover", () => { pointMouse(null); });
 
 svg.append("rect")
     .attr("id", "mapView")
@@ -142,15 +146,12 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
       .enter().append("path")
       .attr("d", path)
       .attr("class", "feature")
-      .on("click", clicked)
-      .on("mouseover", () => { pointMouse(null); });
+      .on("click", clicked);
 
   g.append("path")
       .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
       .attr("class", "mesh")
       .attr("d", path);
-  // Iterate through locations in location array and append to svg
-  console.log(hackathons);
 
   // Query backend to get hackathon datapoints
   $.get("https://api.hackm.app/list", (data) => {
@@ -161,27 +162,25 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
       row.endDate = new Date(endDate.year, endDate.month - 1, endDate.day);
 
       hackathons.push(row);
-      var geoPoint = {
-        "type": "Point",
-        "coordinates": [
+      var coordinates = [
           row.location.longitude,
           row.location.latitude,
-        ]
-      }
+      ];
 
       const i = hackathons.length - 1;
       const color = row.isHighSchool ? "#3333FF" : "#FF0000";
+      const [x, y] = projection(coordinates);
 
-      console.log(i);
-      g.append("path")
-        .attr("d", path(geoPoint))
+      g.append("svg:circle")
+        .attr("cx", x)
+        .attr("cy", y)
+        .attr("r", 6.5)
         .attr("fill", filler(row))
         .attr("class", "hackathon")
         .attr("id", `h-${i}`)
         .on("click", () => { pointClicked(i); })
-        .on("mouseover", () => { pointMouse(i); })
         .style("stroke", color)
-        .style("stroke-width", "0.3");
+        .style("stroke-width", "1");
     })
   })
 
@@ -201,7 +200,6 @@ function clicked(d) {
     mapWidth += modifier;
   }
 
-  console.log(d);
   var bounds = path.bounds(d),
       dx = bounds[1][0] - bounds[0][0],
       dy = bounds[1][1] - bounds[0][1],
@@ -210,46 +208,71 @@ function clicked(d) {
       scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / mapWidth, dy / mapHeight))),
       translate = [mapWidth / 2 - scale * x, mapHeight / 2 - scale * y];
 
-  console.log(bounds);
   svg.transition()
       .duration(750)
       .call(zoom.translate(translate).scale(scale).event);
 }
 
 function pointClicked(i) {
-  console.log(i);
-  console.log(hackathons[i]);
-  let url = hackathons[i].url;
-  /*if (!url.startsWith('https')) */url = `https://d-shen.xyz/miniProxy.php?${url}`;
-  //if (url.startsWith('http://')) url = `https${url.substr(4)}`;
-  $("iframe.preview").attr("src", url);
+  const url = hackathons[i].url;
+  const proxyUrl = `https://d-shen.xyz/miniProxy.php?${url}`;
+  $("iframe.preview").attr("src", proxyUrl);
 
   if (fullMap) {
     fullMap = false;
     startShrink();
   }
-  a.href = hackathons[i].url
+  a.href = url
   $(a).css("display", "inherit");
+}
+
+function checkHovers(event) {
+  let rSQ;
+  let r;
+
+  let children = 0;
+  let length = $(".hackathon").length - 1;
+  $($(".hackathon").get().reverse()).each((i, hackElem) => {
+    const { width } = hackElem.getBoundingClientRect();
+    const { left, top } = $(hackElem).position();
+
+    r = r || parseFloat(width) / 2;
+    rSQ = rSQ || Math.pow(r, 2);
+
+    const dx = Math.abs(event.pageX - (parseFloat(left) + r));
+    const dy = Math.abs(event.pageY - (parseFloat(top) + r));
+    const dSQ = Math.pow(dx, 2) + Math.pow(dy, 2);
+
+    if (dSQ < rSQ && children <= 3) {
+      pointMouse(length - i);
+      children++;
+    } else {
+      $(`#d-${length - i}`).remove();
+    }
+  });
 }
 
 function pointMouse(i) {
   if (i !== null) {
+    if ($(`.description > #d-${i}`).length > 0) return;
     const { name, isHighSchool, location, startDate, endDate } = hackathons[i];
 
-    $(".description > *").remove();
     $(".description")
       .stop()
-      .fadeIn()
-      .append(`<div class="title">${name}${isHighSchool ? " (HS)" : ""}</div>`)
-      .append(`<div class="loc">${location.name}</div>`)
-      .append(`<div class="date">${formatDate(startDate)} - ${formatDate(endDate)} `
-        + `(${startDate.getFullYear()})</div>`);
+      .fadeIn("fast")
+      .append(`<div id="d-${i}">
+        <div class="title">${name}${isHighSchool ? " (HS)" : ""}</div>
+        <div class="loc">${location.name}</div>
+        <div class="date">
+          ${formatDate(startDate)} - ${formatDate(endDate)} (${startDate.getFullYear()})
+        </div>
+      </div>`);
+    if ($(".description").children().length > 3) $(".description > div:last-child").remove();
   } else {
     $(".description").fadeOut("fast", () => {
       $(".description > *").remove();
     });
   }
-
 }
 
 function formatDate(date) {
@@ -289,7 +312,6 @@ function filler(hackathon) {
     else if (gb < 30) gb = 30;
     else if (gb > 255) gb = 255;
   }
-  console.log(`rgb(${red}, ${gb}, ${gb})`);
   return `rgb(${red}, ${gb}, ${gb})`;
 }
 
@@ -309,7 +331,6 @@ function reset() {
     mapWidth += modifier;
   }
 
-  console.log(usMap);
   var bounds = path.bounds(topojson.mesh(usMap, usMap.objects.states, function(a, b) { return a !== b; })),
       dx = bounds[1][0] - bounds[0][0],
       dy = bounds[1][1] - bounds[0][1],
@@ -324,8 +345,10 @@ function reset() {
 }
 
 function zoomed() {
+  scale = d3.event.scale;
   g.style("stroke-width", 1.5 / d3.event.scale + "px");
   g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+  $(".hackathon").attr("r", Math.max(0.7, 6.5 / Math.pow(d3.event.scale, 0.85))).css("stroke-width", Math.max(0.1, 1 / d3.event.scale) + "px");
 }
 
 // If the drag behavior prevents the default click,
@@ -343,6 +366,6 @@ function startShrink() {
 }
 
 resize(false, false); // Resize again to update size
-setTimeout(reset, 100);
+setTimeout(reset, 500);
 </script>
 </body>
