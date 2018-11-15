@@ -23,9 +23,22 @@ body {
   position: absolute;
   bottom: 20px;
   left: 20px;
-  background: #fff;
-  padding: 15px;
   border-radius: 5px;
+  background: #ddd;
+}
+
+.description > div {
+  padding: 0 15px;
+}
+
+.description > div:first-child {
+  background: #fff;
+  border-radius: 5px;
+  padding-bottom: 15px;
+}
+
+.description > div:last-child {
+  padding-bottom: 15px;
 }
 
 .description.portrait {
