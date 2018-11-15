@@ -121,8 +121,7 @@ var svg = d3.select("body").append("svg")
     .attr("id", "map")
     .attr("width", width)
     .attr("height", height)
-    .on("click", stopped, true)
-    .on("mouseover", () => { pointMouse(null); });
+    .on("click", stopped, true);
 
 svg.append("rect")
     .attr("id", "mapView")
@@ -232,7 +231,13 @@ function checkHovers(event) {
 
   let children = 0;
   let length = $(".hackathon").length - 1;
+  let hackathonsToShow = [];
+  let hackathonsToRemove = [];
   $($(".hackathon").get().reverse()).each((i, hackElem) => {
+    if (children >= 3) {
+      $(`#d-${length - i}`).remove();
+      return;
+    }
     const { width } = hackElem.getBoundingClientRect();
     const { left, top } = $(hackElem).position();
 
@@ -243,13 +248,22 @@ function checkHovers(event) {
     const dy = Math.abs(event.pageY - (parseFloat(top) + r));
     const dSQ = Math.pow(dx, 2) + Math.pow(dy, 2);
 
-    if (dSQ < rSQ && children <= 3) {
-      pointMouse(length - i);
+    if (dSQ < rSQ && children < 3) {
+      hackathonsToShow.push(length - i);
+      $("description").stop().show();
       children++;
-    } else {
-      $(`#d-${length - i}`).remove();
+    } else if ($(`#d-${length - i}`).length) {
+      hackathonsToRemove.push($(`#d-${length - i}`));
     }
   });
+  if (children == 0) {
+    $(".description").fadeOut("fast", () => {
+      $(".description > *").remove();
+    });
+  } else {
+    hackathonsToShow.forEach((i) => pointMouse(i));
+    hackathonsToRemove.forEach((hackElem) => hackElem.remove());
+  }
 }
 
 function pointMouse(i) {
@@ -267,7 +281,6 @@ function pointMouse(i) {
           ${formatDate(startDate)} - ${formatDate(endDate)} (${startDate.getFullYear()})
         </div>
       </div>`);
-    if ($(".description").children().length > 3) $(".description > div:last-child").remove();
   } else {
     $(".description").fadeOut("fast", () => {
       $(".description > *").remove();
