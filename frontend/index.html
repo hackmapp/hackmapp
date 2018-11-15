@@ -71,7 +71,6 @@ function resize(animate = false, translate = true) {
   }
   $(".description").css("bottom", `${(!portrait ? 0 : height- modifier) + 20}px`);
 
-
   if (g && translate) {
     let translate = d3.transform(d3.select(g.node()).attr("transform")).translate
     translate[0] = translate[0] + dMod / 2;
@@ -113,6 +112,12 @@ var a = document.createElement('a');
 a.setAttribute("id", "link");
 a.setAttribute("target", "_blank")
 a.appendChild(img);
+
+var img = document.createElement('img');
+img.setAttribute("src", "delete.svg");
+var close = document.createElement('a');
+close.setAttribute("id", "close");
+close.appendChild(img);
 
 var hackathons = [];
 
@@ -184,6 +189,11 @@ d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba16920754
   })
 
   document.querySelector("div.preview").append(a);
+  document.querySelector("div.preview").append(close);
+  $("#close").on("click", () => {
+    unShrink();
+    fullMap = true;
+  });
 });
 
 function clicked(d) {
@@ -223,6 +233,7 @@ function pointClicked(i) {
   }
   a.href = url
   $(a).css("display", "inherit");
+  $(close).css("display", "inherit");
 }
 
 function checkHovers(event) {
@@ -372,10 +383,14 @@ function stopped() {
 
 function startShrink() {
   $(".preview").show();
-  modifier = Math.trunc(portrait ? height : width);
-  modifier = Math.trunc(modifier / 4) * 4;
   modifier = 0;
   resize(true);
+}
+
+function unShrink() {
+  modifier = Math.trunc(portrait ? height : width);
+  resize(true);
+  setTimeout(() => $(".preview").hide(), 750);
 }
 
 resize(false, false); // Resize again to update size
