@@ -8,9 +8,8 @@ import parse from 'csv-parse';
 
 import Hackathon, { Date, Location } from './Hackathon';
 
-const apiKey: string = process.env.API_KEY || '';
 const geocodeUrl = (address: string) =>
-  `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${apiKey}`;
+  `https://nominatim.openstreetmap.org/search?format=json&q=${address}`;
 
 const app = express();
 
@@ -32,6 +31,7 @@ const corsOptionsDelegate = (req: any, callback: any) => {
 app.use(cors(corsOptionsDelegate));
 
 let hackathons: Hackathon[] = [];
+const locationCache: { [address: string] : Location; } = {};
 let sorted: boolean = false;
 
 app.get('/list', (req, res) => {
@@ -59,6 +59,31 @@ function cleanAccents(input: string) {
   return output;
 }
 
+const getLocation = (address: string) : Promise<Location> => {
+  return new Promise<Location>((resolve, reject) => {
+    if (locationCache[address]) {
+      console.log('cached');
+      return resolve(locationCache[address]);
+    }
+
+    axios.get(geocodeUrl(cleanAccents(address)))
+      .then((response: any) => {
+        if (response.data.length === 0) return;
+
+        if (!response.data[0].display_name.endsWith('USA')) return;
+
+        const location: Location = {
+          longitude: parseFloat(response.data[0].lon),
+          latitude: parseFloat(response.data[0].lat),
+          name: address,
+        };
+
+        locationCache[address] = location;
+        return resolve(location);
+      }).catch((err: any) => reject(err));
+  });
+};
+
 // Parse the data csv and store it
 const parser = () => parse({ delimiter: ',', columns: true }, (err: any | Error, data: any) => {
   // TODO: store data into hackathons
@@ -66,26 +91,8 @@ const parser = () => parse({ delimiter: ',', columns: true }, (err: any | Error,
   sorted = false;
   data.forEach((row: any) => {
     const address = `${row.Locality}, ${row.Region}`;
-    axios.get(geocodeUrl(cleanAccents(address)))
-      .then((response: any) => {
-        if (response.data.status !== 'OK') return;
-
-        let isUS: boolean = true;
-        response.data.results[0].address_components.forEach((component: any) => {
-          if (component.types[0] === 'country') {
-            isUS = (component.short_name === 'US');
-            return;
-          }
-        });
-
-        if (!isUS) return;
-
-        const location: Location = {
-          longitude: parseFloat(response.data.results[0].geometry.location.lng),
-          latitude: parseFloat(response.data.results[0].geometry.location.lat),
-          name: address,
-        };
-
+    getLocation(address)
+      .then((location: Location) => {
         let hackathon: Hackathon = {
           name: row.Hackathon_Name,
           isHighSchool: row.High_School === '1',
@@ -104,7 +111,7 @@ const parser = () => parse({ delimiter: ',', columns: true }, (err: any | Error,
         };
 
         hackathons.push(hackathon);
-      }).catch((err) => console.log(err));
+      }).catch((err: any) => console.log(err));
   });
   scraper.kill();
   readStream.close();
