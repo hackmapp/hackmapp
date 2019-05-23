@@ -39,12 +39,12 @@ for event in events:
     #print(startYear + " " + startMonth + " " + startDay)
 
     # finds and prints the locality
-    localityContainer = event.findAll("span",{"itemprop":"addressLocality"})
+    localityContainer = event.findAll("span",{"itemprop":"city"})
     locality = localityContainer[0].text.strip()
     #print(locality)
 
     # finds and prints the region
-    regionContainer = event.findAll("span",{"itemprop":"addressRegion"})
+    regionContainer = event.findAll("span",{"itemprop":"state"})
     region = regionContainer[0].text.strip()
     #print(region)
 

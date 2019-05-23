@@ -226,7 +226,7 @@ function clicked(d) {
 
 function pointClicked(i) {
   const url = hackathons[i].url;
-  const proxyUrl = `https://d-shen.xyz/miniProxy.php?${url}`;
+  const proxyUrl = `https://mp.d-shen.xyz/miniProxy.php?${url}`;
   $("iframe.preview").attr("src", proxyUrl);
 
   if (fullMap) {
