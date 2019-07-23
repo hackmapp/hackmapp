@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup as soup
 user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
 
 # references
-my_url = "https://mlh.io/seasons/na-2019/events"
+my_url = "https://mlh.io/seasons/na-2020/events"
 headers = {'User-Agent':user_agent,} 
 
 # don't touch
