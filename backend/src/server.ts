@@ -70,7 +70,7 @@ const getLocation = (address: string) : Promise<Location> => {
       .then((response: any) => {
         if (response.data.length === 0) return;
 
-        if (!response.data[0].display_name.endsWith('USA')) return;
+        if (!response.data[0].display_name.endsWith('United States of America')) return;
 
         const location: Location = {
           longitude: parseFloat(response.data[0].lon),
@@ -115,6 +115,7 @@ const parser = () => parse({ delimiter: ',', columns: true }, (err: any | Error,
   });
   scraper.kill();
   readStream.close();
+  console.log('updated');
 });
 
 // Calls the scraper and updates the database with the data from the scraper
